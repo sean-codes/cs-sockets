@@ -71,7 +71,7 @@ function echoTextMessage(socket, str){
         response.push(str.charCodeAt(i));
     }
     console.log(response);
-    socket.write(new Buffer(response));//
+    socket.write(new Buffer(response));
 }
 
 
