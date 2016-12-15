@@ -70,8 +70,8 @@ function echoTextMessage(socket, str){
     for(var i = 0; i < str.length; i ++){
         response.push(str.charCodeAt(i));
     }
-    console.log(response);//awdw
-    socket.write(new Buffer(response));
+    console.log(response);
+    socket.write(new Buffer(response));//
 }
 
 
