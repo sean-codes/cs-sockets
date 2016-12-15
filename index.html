@@ -1,0 +1,15 @@
+<script>
+	var ws = new WebSocket('ws://127.0.0.1:3000');
+	ws.onopen = function(){
+	    console.log('Connected to 127.0.0.1:3000!');
+	}
+	ws.addEventListener("message", function(event) {
+	    console.log('Received: ' + event.data);
+	});
+
+	sendMessage = (text = 'test') => {
+		console.log('Sent: ' + text)
+	    ws.send(text);
+	}
+</script>
+
