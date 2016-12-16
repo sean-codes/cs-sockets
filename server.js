@@ -39,9 +39,9 @@ server.on('upgrade', (request, socket, head) => {
 
     //Start Keeping an Eye out for Data
     socket.on('data', (data) => {
-        console.clear();
+        //console.clear();
         console.log('Receiving Message:', data);
-        var isFinished = data[0] & 127;
+        var isFinished = data[0] >> 7;
         var optionCode = data[0] & 15;
         var isMasked = data[1] >> 7;
         var dataLength = data[1] & 127;
@@ -49,7 +49,7 @@ server.on('upgrade', (request, socket, head) => {
         console.log('Is Masked: ' + isMasked);
         console.log('Option Code: ' + optionCode);
         console.log('Data Length: ' + dataLength);
-        if(optionCode === 1 && isFinished === 1 && isMasked === 1 && dataLength < 127){
+        if(optionCode === 1 && isFinished === 1 && isMasked === 1 && dataLength < 126){
             var maskingKey = data.slice(2, 6);
             var maskedData = data.slice(6, 6+dataLength);
             var unMaskedData = '';
@@ -59,8 +59,7 @@ server.on('upgrade', (request, socket, head) => {
             console.log('unMaskedData: ' + unMaskedData);
             echoTextMessage(socket, unMaskedData);
         } else {
-            //Close Connection
-            socket.end(new Buffer(136, 1));
+            echoTextMessage(socket, 'Message larger than 126 bytes!');
         }
     });
 });
