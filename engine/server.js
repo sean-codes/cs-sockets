@@ -4,7 +4,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 
 //My Consts
-const hostname = '127.0.0.1';
+const hostname = 'localhost';
 const port = 3000;
 const webSocketMagicString = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
 
@@ -61,7 +61,7 @@ server.on('upgrade', (request, socket, head) => {
         console.log('Option Code: ' + optionCode);
         console.log('Data Length: ' + dataLength);
         console.log('Data Start: ' + dataStart);
-        if(data[0] === 129 && dataLength < 65535 && optionCode === 1 && isFinished === 1 && isMasked === 1){
+        if(data[0] === 129 && dataLength < 1000 && optionCode === 1 && isFinished === 1 && isMasked === 1){
             var maskingKey = data.slice(dataStart-4, dataStart);
             var maskedData = data.slice(dataStart, dataStart+dataLength);
             var unMaskedData = '';
