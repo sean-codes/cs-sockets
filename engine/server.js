@@ -21,7 +21,7 @@ const server = http.createServer((requestIncoming, responseOutGoing) => {
 });
 
 server.listen(port, hostname, () => {
-    console.clear();
+    //console.clear();
     console.log(`Server is online on http://${hostname}:${port}`);
 });
 
