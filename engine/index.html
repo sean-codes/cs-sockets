@@ -1,4 +1,7 @@
 <html style="background:#cdcdcd">
+<head>
+	<meta charset="utf-8"/>
+</head>
 <script>
 	var ws = new WebSocket('ws://127.0.0.1:3000');
 	ws.onopen = function(){
@@ -9,7 +12,6 @@
 	});
 
 	sendMessage = (text = 'test') => {
-		console.log('Sent: ' + text)
 	    ws.send(text);
 	}
 </script>
