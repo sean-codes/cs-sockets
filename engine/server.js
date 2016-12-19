@@ -42,15 +42,15 @@ server.on('upgrade', (request, socket, head) => {
 
     socket.cs = {
         socket : socket,
-        buffer : Buffer.allocUnsafe(1000000),
+        buffer : Buffer.allocUnsafe(0),
         state : STATE_START,
         payloadLength : 0,
         payloadStart : 0,
-        bufferLength : 0,
         messagesRead : 0
     }
     socket.cs.start = function(){
-        if(this.bufferLength < 2) return;
+        //console.log('Starting...');
+        if(this.buffer.length < 2) return;
         this.maskOpBlah = this.bufferRead(1)[0];
         this.payloadLength = this.bufferRead(1)[0] & 0x7f; 
         if(this.payloadLength === 126){
@@ -63,52 +63,60 @@ server.on('upgrade', (request, socket, head) => {
     }
     
     socket.cs.getLength = function(){
-        if(this.bufferLength < 2) return
+        //console.log('Getting Length...');
+        if(this.buffer.length < 2) return
         this.payloadLength = this.bufferRead(2).readUInt16BE(0);
         this.state = STATE_GET_MASK;
         this.getMask();
     }
 
     socket.cs.getMask = function(){
-        if(this.bufferLength < 4) return
+        //console.log('Getting Mask...');
+        if(this.buffer.length < 4) return
         this.mask = this.bufferRead(4);
         this.state = STATE_GET_DATA;
         this.getData();
     }
     
     socket.cs.getData = function(){
-        if(this.bufferLength >= this.payloadLength + this.payloadStart){
+        //console.log('Getting Data...');
+        if(this.buffer.length >= this.payloadLength + this.payloadStart){
             var unMaskedData = '';
             var unMaskedBuffer = this.bufferRead(this.payloadLength);
+            if(this.payloadLength < 125) {
+                var dataOffset = 2;
+                var response = Buffer.allocUnsafe(dataOffset+this.payloadLength);
+                response.writeUInt8(129, 0);
+                response.writeUInt8(this.payloadLength, 1);
+            } else {
+                var dataOffset = 4;
+                var response = Buffer.allocUnsafe(dataOffset+this.payloadLength);
+                response.writeUInt8(129, 0);
+                response.writeUInt8(126, 1);
+                response.writeUInt16BE(this.payloadLength, 2);
+            } 
             for(var i = 0; i < unMaskedBuffer.length; i++){
-                unMaskedData += String.fromCharCode(unMaskedBuffer[i] ^ this.mask[i % 4]);
+                response.writeUInt8(unMaskedBuffer[i] ^ this.mask[i % 4], dataOffset+i);
             }
-            this.messagesRead += 1;
-            echoTextMessage(this.socket, unMaskedData);
+            this.socket.write(response);
 
             this.state = STATE_START;
             this.start();
         }
     }
     socket.cs.bufferRead = function(cnt){
-        this.socket.pause();
         var read = Buffer.allocUnsafe(cnt);
         for(var i = 0; i < cnt; i++){
-            read[i] = this.buffer[0];
-            this.buffer.shift();
-            this.bufferLength -= 1;
+            read[i] = this.buffer[i];
         }
-        this.buffer.copy(this.buffer, 0, i, this.buffer.length);
-        this.socket.resume();
+        this.buffer = this.buffer.slice(i, this.buffer.length);
         return read;
     }
     //Start Keeping an Eye out for Data
     socket.on('data', (newData) => {
-        socket.cs.buffer.fill(newData, socket.cs.bufferLength);
-        socket.cs.bufferLength += newData.length;
-        if(socket.cs.bufferLength > 40000){
-            console.log('oh fuck', socket.cs.bufferLength);  
-        }
+        //console.log('receiving data');
+        socket.cs.buffer = Buffer.concat([socket.cs.buffer, newData]);
+
         switch(socket.cs.state){
             case STATE_START:
                 socket.cs.start();
