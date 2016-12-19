@@ -46,12 +46,19 @@ server.on('upgrade', (request, socket, head) => {
         state : STATE_START,
         payloadLength : 0,
         payloadStart : 0,
+        cont : false,
+        contBufferData : Buffer.allocUnsafe(0);
         messagesRead : 0
     }
     socket.cs.start = function(){
         //console.log('Starting...');
         if(this.buffer.length < 2) return;
         this.maskOpBlah = this.bufferRead(1)[0];
+        if(this.maskOpBlah !== 129){
+            console.log('wtf: ' + this.buffer.length, this.maskOpBlah, this.buffer[0]);
+            //return;
+            this.cont = true;
+        } 
         this.payloadLength = this.bufferRead(1)[0] & 0x7f; 
         if(this.payloadLength === 126){
             this.state = STATE_GET_LENGTH;
@@ -98,7 +105,13 @@ server.on('upgrade', (request, socket, head) => {
             for(var i = 0; i < unMaskedBuffer.length; i++){
                 response.writeUInt8(unMaskedBuffer[i] ^ this.mask[i % 4], dataOffset+i);
             }
-            this.socket.write(response);
+            if(this.cont === true){
+                this.socket.write(response);
+                this.cont = false;
+            } else {
+                this.socket.write(response);
+            }
+            
 
             this.state = STATE_START;
             this.start();
