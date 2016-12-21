@@ -47,14 +47,23 @@ server.on('upgrade', (request, socket, head) => {
         payloadLength : 0,
         payloadStart : 0,
         cont : false,
-        contBufferData : Buffer.allocUnsafe(0);
-        messagesRead : 0
+        continuationBuffer : Buffer.allocUnsafe(0),
+        finished : true
     }
+
     socket.cs.start = function(){
         //console.log('Starting...');
         if(this.buffer.length < 2) return;
         this.maskOpBlah = this.bufferRead(1)[0];
         if(this.maskOpBlah !== 129){
+            if(this.maskOpBlah == 1){
+                console.log('Text Not Finished');
+                this.finished = false;
+            }
+            if(this.maskOpBlah == 128){
+                console.log('Continuation finished: ' + this.continuationBuffer.length);
+                this.finished = true;
+            }
             console.log('wtf: ' + this.buffer.length, this.maskOpBlah, this.buffer[0]);
             //return;
             this.cont = true;
@@ -88,39 +97,50 @@ server.on('upgrade', (request, socket, head) => {
     socket.cs.getData = function(){
         //console.log('Getting Data...');
         if(this.buffer.length >= this.payloadLength + this.payloadStart){
+            //Create Buffer Header
+            var payloadOffset = (this.payloadLength < 125) ? 2 : 4;
+            var response = Buffer.allocUnsafe(this.payloadLength);
+            //Unmask Data
             var unMaskedData = '';
             var unMaskedBuffer = this.bufferRead(this.payloadLength);
-            if(this.payloadLength < 125) {
-                var dataOffset = 2;
-                var response = Buffer.allocUnsafe(dataOffset+this.payloadLength);
-                response.writeUInt8(129, 0);
-                response.writeUInt8(this.payloadLength, 1);
-            } else {
-                var dataOffset = 4;
-                var response = Buffer.allocUnsafe(dataOffset+this.payloadLength);
-                response.writeUInt8(129, 0);
-                response.writeUInt8(126, 1);
-                response.writeUInt16BE(this.payloadLength, 2);
-            } 
             for(var i = 0; i < unMaskedBuffer.length; i++){
-                response.writeUInt8(unMaskedBuffer[i] ^ this.mask[i % 4], dataOffset+i);
+                response.writeUInt8(unMaskedBuffer[i] ^ this.mask[i % 4], i);
             }
-            if(this.cont === true){
-                this.socket.write(response);
-                this.cont = false;
+
+            //Write back or save for later
+            if(this.finished === true){
+                this.frameDataAndSend(response);
             } else {
-                this.socket.write(response);
+                //Appending continuation
+                console.log('appending: ' + response.length);
+                this.continuationBuffer = Buffer.concat([this.continuationBuffer, response]);
             }
             
-
             this.state = STATE_START;
             this.start();
         }
     }
+
+    socket.cs.frameDataAndSend = function(data){
+        if(data.length < 125){
+            var header = Buffer.allocUnsafe(2);
+            header.writeUInt8(129, 0);
+            header.writeUInt8(data.length+this.continuationBuffer.length, 1);
+        } else {
+            var header = Buffer.allocUnsafe(4);
+            header.writeUInt8(129, 0);
+            header.writeUInt8(126, 1);
+            header.writeUInt16BE(data.length+this.continuationBuffer.length, 2);
+        }
+
+        this.socket.write(Buffer.concat([header, this.continuationBuffer, data]));
+        this.continuationBuffer = Buffer.allocUnsafe(0);
+    }
+
     socket.cs.bufferRead = function(cnt){
         var read = Buffer.allocUnsafe(cnt);
         for(var i = 0; i < cnt; i++){
-            read[i] = this.buffer[i];
+            read.writeUInt8(this.buffer[i], i);
         }
         this.buffer = this.buffer.slice(i, this.buffer.length);
         return read;
