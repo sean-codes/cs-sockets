@@ -23,6 +23,23 @@
 		}
 	    
 	} 
+
+	var burnItDown = () => {
+		var start = 0;
+		for(var i = 0; i < 300; i++){
+			var text = buildString(i);
+			sendMessage(text, 20);	
+		}
+	}
+
+	var buildString = (cnt) => {
+		var letter = 'a';
+		var word = '';
+		for(var i = 0; i < cnt; i++){
+			word += letter;
+		}
+		return word;
+	}
 </script>
 </html>
 
