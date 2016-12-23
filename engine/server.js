@@ -64,7 +64,7 @@ server.on('upgrade', (request, socket, head) => {
         finished : true
     }
 
-    socket.cs.start = function(){
+    socket.cs.start = function(newDataLength){
         if(this.buffer.length < 2) return;
         this.maskOpBlah = this.bufferRead(1)[0];
         if(this.maskOpBlah !== FO_FINISHED){
@@ -80,28 +80,28 @@ server.on('upgrade', (request, socket, head) => {
         this.payloadLength = this.bufferRead(1)[0] & 0x7f; 
         if(this.payloadLength === PL_LARGE){
             this.state = STATE_GET_LENGTH;
-            this.getLength();
+            this.getLength(newDataLength);
         } else {
             this.state = STATE_GET_MASK;
-            this.getMask();
+            this.getMask(newDataLength);
         }
     }
     
-    socket.cs.getLength = function(){
+    socket.cs.getLength = function(newDataLength){
         if(this.buffer.length < 2) return
         this.payloadLength = this.bufferRead(2).readUInt16BE(0);
         this.state = STATE_GET_MASK;
-        this.getMask();
+        this.getMask(newDataLength);
     }
 
-    socket.cs.getMask = function(){
+    socket.cs.getMask = function(newDataLength){
         if(this.buffer.length < 4) return
         this.mask = this.bufferRead(4);
         this.state = STATE_GET_DATA;
-        this.getData();
+        this.getData(newDataLength);
     }
     
-    socket.cs.getData = function(){
+    socket.cs.getData = function(newDataLength){
         if(this.buffer.length >= this.payloadLength + this.payloadStart){
             //Create Buffer Header
             var payloadOffset = (this.payloadLength < PL_LARGE) ? 2 : 4;
@@ -114,16 +114,21 @@ server.on('upgrade', (request, socket, head) => {
                 response.writeUInt8(unMaskedBuffer[i] ^ this.mask[i % 4], i);
             }
 
+            
             //Write back or save for later
             if(this.finished === true){
-                this.frameDataAndSend(response);
+                var responseLength = this.frameDataAndSend(response);
             } else {                
                 this.continuationBuffer = Buffer.concat([this.continuationBuffer, response]);
                 console.log('turning heat: ' + this.continuationBuffer.length);
+                var responseLength =  response.length
             }
             
             this.state = STATE_START;
-            this.start();
+            newDataLength -= responseLength;
+            if(newDataLength > 0){
+                this.start(newDataLength);
+            }
         }
     }
 
@@ -138,9 +143,10 @@ server.on('upgrade', (request, socket, head) => {
             header.writeUInt8(PL_LARGE, 1);
             header.writeUInt16BE(data.length+this.continuationBuffer.length, 2);
         }
-
-        this.socket.write(Buffer.concat([header, this.continuationBuffer, data]));
+        var test = Buffer.concat([header, this.continuationBuffer, data]);
+        this.socket.write(test);
         this.continuationBuffer = Buffer.allocUnsafe(0);
+        return test.length;
     }
 
     socket.cs.bufferRead = function(cnt){
@@ -156,16 +162,16 @@ server.on('upgrade', (request, socket, head) => {
         socket.cs.buffer = Buffer.concat([socket.cs.buffer, newData]);
         switch(socket.cs.state){
             case STATE_START:
-                socket.cs.start();
+                socket.cs.start(newData.length);
                 break;
             case STATE_GET_LENGTH:
-                socket.cs.getLength();
+                socket.cs.getLength(newData.length);
                 break;
             case STATE_GET_MASK:
-                socket.cs.getMask();
+                socket.cs.getMask(newData.length);
                 break;
             case STATE_GET_DATA:
-                socket.cs.getData();
+                socket.cs.getData(newData.length);
                 break;
         }
     });
