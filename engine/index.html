@@ -9,11 +9,7 @@
 	    console.log('Connected to 127.0.0.1:3000!');
 	}
 	ws.addEventListener("message", function(event) {
-		if(event.data == sent){
-			console.log('All Good lets roll');
-		} else {
-			console.log(event.data);
-		}
+		console.log('All Good: ' + event.data.length);
 	});
 
 	sendMessage = (text = 'test', cnt = 1) => {
@@ -26,7 +22,7 @@
 
 	var burnItDown = () => {
 		var start = 0;
-		for(var i = 0; i < 300; i++){
+		for(var i = 0; i < 1000; i++){
 			var text = buildString(i);
 			sendMessage(text, 20);	
 		}
