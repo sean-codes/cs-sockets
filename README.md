@@ -11,4 +11,4 @@ Local Machine ~3,000 256 byte string Up/Down
 
 Remote ~500 256 byte string Up/Down (Coffee Shop Wireless Connection)
 
-With sending 100k 127byte strings up/down it does this around 1 minute. Which is around 30 seconds faster than WS
+With sending(local) 100k 127byte strings up/down it does this around 1 minute. Which is around 30 seconds faster than WS
