@@ -33,17 +33,19 @@ csServer.listen(PORT, HOSTNAME, () => {
 //Holding Connections
 csServer.clientList = [];
 csServer.addClient = function(socket){
-    console.log('Player Added!');
+    console.log('Client Added!');
     var id = this.clientList.length;
     this.clientList.push({
         id:     id,
         room:   0,
         socket: socket
     });
+    return this.clientList[id];
 }
 
 csServer.removeClient = function(socket){
-    console.log('Player Removed!');
+    console.log('Client Removed!');
+    socket.id = -1;//Dead Socket
     csServer.clientList.pop(socket.id);
 }
 
@@ -60,8 +62,7 @@ csServer.on('upgrade', function(request, socket, head){
     );
     socket.setTimeout(0);
     socket.allowHalfOpen = false;
-    socket.cs = new csSocket(this, socket); 
-    socket.id = this.addClient(socket);
+    socket.cs = new csSocket(this, socket, csServer.addClient(socket)); 
 
     //Basic Event Handling
     socket.on('data', function(newData){
@@ -79,6 +80,20 @@ csServer.on('upgrade', function(request, socket, head){
     });
 });
 
-
+csServer.sendMessage = function(from, to, data){
+    //Sending Data
+    if(data.length < PL_LARGE){
+        var header = Buffer.allocUnsafe(2);
+        header.writeUInt8(FO_FINISHED, 0);
+        header.writeUInt8(data.length, 1);
+    } else {
+        var header = Buffer.allocUnsafe(4);
+        header.writeUInt8(FO_FINISHED, 0);
+        header.writeUInt8(PL_LARGE, 1);
+        header.writeUInt16BE(data.length, 2);
+    }
+    var headerWithData = Buffer.concat([header, Buffer.from(data)]);
+    this.clientList[to].socket.write(headerWithData);
+}
 
 module.exports = csServer;
