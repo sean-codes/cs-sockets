@@ -3,14 +3,14 @@ const csServer = require('./csServer');
 
 csServer.on('message', function(client, message){
 	//To a Specific clientID
-    this.sendMessage(client.id, client.id, message);
+    //this.sendMessage(client, client, message);
 
     //To everyone but SocketID
-    //this.sendMessage(client.id, 'multicast', message);
+    //this.sendMessage(client, 'multicast', message);
 
     //To Everyone in Room
-    //this.sendMessage(sclient.id, 'broadcast', message);
+    this.sendMessage(client, 'broadcast', message);
 
     //To Everyone in Game
-    //this.sendMessage(client.id, 'globalcast', message);
+    //this.sendMessage(client, 'globalcast', message);
 });
