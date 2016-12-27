@@ -30,6 +30,23 @@ csServer.listen(PORT, HOSTNAME, () => {
     console.log(`Server is online on http://${HOSTNAME}:${PORT}`);
 });
 
+//Holding Connections
+csServer.clientList = [];
+csServer.addClient = function(socket){
+    console.log('Player Added!');
+    var id = this.clientList.length;
+    this.clientList.push({
+        id:     id,
+        room:   0,
+        socket: socket
+    });
+}
+
+csServer.removeClient = function(socket){
+    console.log('Player Removed!');
+    csServer.clientList.pop(socket.id);
+}
+
 //Handle Upgrades to Websocket
 csServer.on('upgrade', function(request, socket, head){
     var secWebSocketKey = request.headers['sec-websocket-key'] + WS_MAGIC_STRING;
@@ -42,37 +59,26 @@ csServer.on('upgrade', function(request, socket, head){
         + `Sec-WebSocket-Accept: ${hashedKey}\r\n\r\n`
     );
     socket.setTimeout(0);
+    socket.allowHalfOpen = false;
     socket.cs = new csSocket(this, socket); 
-    socket.on('data', (newData) => {
-        socket.cs.buffer = Buffer.concat([socket.cs.buffer, newData]);
-        socket.cs.receivedData(newData.length);
+    socket.id = this.addClient(socket);
+
+    //Basic Event Handling
+    socket.on('data', function(newData){
+        this.cs.buffer = Buffer.concat([socket.cs.buffer, newData]);
+        this.cs.receivedData(newData.length);
     }); 
 
-    socket.on('end', function(){
-        console.log('socket end');
+    socket.on('close', function(){
+        console.log('Socket Closed');
+        csServer.removeClient(this);
     });
 
-    socket.on('timeout', function(){
-        console.log('socket timeout');
-    })
-
-    console.log(socket);
+    socket.on('end', function(){
+        console.log('Socket Ended');
+    });
 });
-    
-//Sending Data
-csServer.send = function(to, data){
-    if(data.length < PL_LARGE){
-        var header = Buffer.allocUnsafe(2);
-        header.writeUInt8(FO_FINISHED, 0);
-        header.writeUInt8(data.length, 1);
-    } else {
-        var header = Buffer.allocUnsafe(4);
-        header.writeUInt8(FO_FINISHED, 0);
-        header.writeUInt8(PL_LARGE, 1);
-        header.writeUInt16BE(data.length, 2);
-    }
-    var headerWithData = Buffer.concat([header, Buffer.from(data)]);
-    to.write(headerWithData);
-}
+
+
 
 module.exports = csServer;
