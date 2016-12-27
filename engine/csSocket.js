@@ -18,9 +18,10 @@ const PL_MAX = 50000;
 const EMPTY_BUFFER = Buffer.allocUnsafe(0);
 
 class csSocket {
-    constructor (server, socket) {
+    constructor (server, socket, info) {
         this.socket = socket;
         this.server = server;
+        this.info = info;
         this.buffer = EMPTY_BUFFER;
         this.state  = STATE_START;
         this.payloadLength = 0;
@@ -114,7 +115,7 @@ class csSocket {
 
             //Write back or save for later
             if(this.finished === true){
-                this.server.emit('message', this, Buffer.concat([this.continuationBuffer, response]).toString());
+                this.server.emit('message', this.info, Buffer.concat([this.continuationBuffer, response]).toString());
                 this.continuationBuffer = EMPTY_BUFFER;
             } else {                
                 this.continuationBuffer = Buffer.concat([this.continuationBuffer, response]);
@@ -128,22 +129,6 @@ class csSocket {
                 this.start(newDataLength);
             }
         }
-    }
-
-    //Sending Data
-    message(to, data){
-        if(data.length < PL_LARGE){
-            var header = Buffer.allocUnsafe(2);
-            header.writeUInt8(FO_FINISHED, 0);
-            header.writeUInt8(data.length, 1);
-        } else {
-            var header = Buffer.allocUnsafe(4);
-            header.writeUInt8(FO_FINISHED, 0);
-            header.writeUInt8(PL_LARGE, 1);
-            header.writeUInt16BE(data.length, 2);
-        }
-        var headerWithData = Buffer.concat([header, Buffer.from(data)]);
-        to.socket.write(headerWithData);
     }
 }
 
