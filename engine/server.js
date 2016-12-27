@@ -1,15 +1,16 @@
 //Require Build In
 const csServer = require('./csServer');
 
-csServer.on('message', function(socket, message){
-	//To a Specific SocketID
-    socket.message(socket, message);
+csServer.on('message', function(client, message){
+	//To a Specific clientID
+    this.sendMessage(client.id, client.id, message);
+
     //To everyone but SocketID
-    //socket.send('multicast', message);
+    //this.sendMessage(client.id, 'multicast', message);
 
     //To Everyone in Room
-    //socket.send('broadcast', message);
+    //this.sendMessage(sclient.id, 'broadcast', message);
 
     //To Everyone in Game
-    //socket.send('globalcast', message);
+    //this.sendMessage(client.id, 'globalcast', message);
 });
