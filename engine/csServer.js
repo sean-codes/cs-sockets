@@ -81,6 +81,32 @@ csServer.on('upgrade', function(request, socket, head){
 });
 
 csServer.sendMessage = function(from, to, data){
+    if(typeof to == 'string'){
+        for(var i = 0; i < this.clientList.length; i++){
+            var client = this.clientList[i];
+            switch(to){
+                case 'multicast':
+                    if(i !== from && client.room == from.room){
+                        csServer.frameAndSendData(client, data);
+                    }
+                    break;
+                case 'broadcast':
+                    if(client.room == from.room){
+                        csServer.frameAndSendData(client, data);
+                    }
+                    break;
+                case 'globalcast':
+                    csServer.frameAndSendData(client, data);
+                    break;
+            }
+        }
+    } else {
+        csServer.frameAndSendData(to, data);
+    }
+    
+}
+
+csServer.frameAndSendData = function(client, data){
     //Sending Data
     if(data.length < PL_LARGE){
         var header = Buffer.allocUnsafe(2);
@@ -93,7 +119,7 @@ csServer.sendMessage = function(from, to, data){
         header.writeUInt16BE(data.length, 2);
     }
     var headerWithData = Buffer.concat([header, Buffer.from(data)]);
-    this.clientList[to].socket.write(headerWithData);
+    client.socket.write(headerWithData);
 }
 
 module.exports = csServer;
