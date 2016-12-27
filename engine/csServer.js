@@ -3,48 +3,76 @@ const csSocket = require('./csSocket');
 const crypto = require('crypto');
 const http = require('http');
 const fs = require('fs');
+
+//Constants 
 const HOSTNAME = 'localhost';
 const PORT = 9999;
+const HTML_INDEX = 'index.html';
+
 const WS_MAGIC_STRING = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
 
-
+const FO_FINISHED = 129;
+const PL_LARGE = 126;
 
 //Create Server
-const csServer = http.createServer((requestIncoming, responseOutGoing) => {
+csServer = http.createServer((requestIncoming, responseOutGoing) => {
     responseOutGoing.statusCode = 200;
     responseOutGoing.setHeader('Contenet-Type', 'text/html');
 
-    fs.readFile('index.html', function(error, content){ 
+    fs.readFile(HTML_INDEX, function(error, content){ 
         responseOutGoing.end(content);
     });    
 });
+    
 
 //Listen
 csServer.listen(PORT, HOSTNAME, () => {
     console.log(`Server is online on http://${HOSTNAME}:${PORT}`);
 });
 
-
-//Grab Data
-csServer.on('upgrade', (request, socket, head) => {
+//Handle Upgrades to Websocket
+csServer.on('upgrade', function(request, socket, head){
     var secWebSocketKey = request.headers['sec-websocket-key'] + WS_MAGIC_STRING;
     var hashedKey = crypto.createHash('SHA1').update(secWebSocketKey).digest('base64');
-    
-    //Send Back to requester
+
     socket.write( 
           'HTTP/1.1 101 Switching Protocols\r\n'
         + 'Upgrade: websocket\r\n'
         + 'Connection: Upgrade\r\n'
-        + 'Sec-WebSocket-Accept: '+hashedKey+'\r\n'
-        + '\r\n'
+        + `Sec-WebSocket-Accept: ${hashedKey}\r\n\r\n`
     );
-
-    socket.cs = new csSocket(socket); 
-    
-    //Start Keeping an Eye out for Data
+    socket.setTimeout(0);
+    socket.cs = new csSocket(this, socket); 
     socket.on('data', (newData) => {
         socket.cs.buffer = Buffer.concat([socket.cs.buffer, newData]);
         socket.cs.receivedData(newData.length);
     }); 
-});
 
+    socket.on('end', function(){
+        console.log('socket end');
+    });
+
+    socket.on('timeout', function(){
+        console.log('socket timeout');
+    })
+
+    console.log(socket);
+});
+    
+//Sending Data
+csServer.send = function(to, data){
+    if(data.length < PL_LARGE){
+        var header = Buffer.allocUnsafe(2);
+        header.writeUInt8(FO_FINISHED, 0);
+        header.writeUInt8(data.length, 1);
+    } else {
+        var header = Buffer.allocUnsafe(4);
+        header.writeUInt8(FO_FINISHED, 0);
+        header.writeUInt8(PL_LARGE, 1);
+        header.writeUInt16BE(data.length, 2);
+    }
+    var headerWithData = Buffer.concat([header, Buffer.from(data)]);
+    to.write(headerWithData);
+}
+
+module.exports = csServer;
