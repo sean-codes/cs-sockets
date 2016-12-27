@@ -14,6 +14,7 @@ const STATE_GET_DATA = 3;
 
 //Payload/Buffer
 const PL_LARGE = 126;
+const PL_MAX = 50000;
 const EMPTY_BUFFER = Buffer.allocUnsafe(0);
 
 class csSocket {
@@ -27,6 +28,15 @@ class csSocket {
         this.cont = false;
         this.continuationBuffer = EMPTY_BUFFER;
         this.finished = true;
+    }
+
+    bufferRead(cnt){
+        var read = Buffer.allocUnsafe(cnt);
+        for(var i = 0; i < cnt; i++){
+            read.writeUInt8(this.buffer[i], i);
+        }
+        this.buffer = this.buffer.slice(i, this.buffer.length);
+        return read;
     }
 
     receivedData(payLoadLength){
@@ -57,7 +67,6 @@ class csSocket {
             if(this.maskOpBlah == FO_CONTINUATION){
                 this.finished = true;
             }
-
             this.cont = true;
         } 
         this.payloadLength = this.bufferRead(1)[0] & 0x7f; 
@@ -74,8 +83,12 @@ class csSocket {
         if(this.buffer.length < 2) return
         newDataLength -= 2;
         this.payloadLength = this.bufferRead(2).readUInt16BE(0);
-        this.state = STATE_GET_MASK;
-        this.getMask(newDataLength);
+        if(this.payloadLength < PL_MAX){
+            this.state = STATE_GET_MASK;
+            this.getMask(newDataLength);
+        } else {
+            this.socket.destroy();
+        }
     }
 
     getMask(newDataLength){
@@ -101,9 +114,8 @@ class csSocket {
 
             //Write back or save for later
             if(this.finished === true){
-                this.server.emit('message', this.socket, Buffer.concat([this.continuationBuffer, response]).toString());
+                this.server.emit('message', this, Buffer.concat([this.continuationBuffer, response]).toString());
                 this.continuationBuffer = EMPTY_BUFFER;
-                //call me onmessage function
             } else {                
                 this.continuationBuffer = Buffer.concat([this.continuationBuffer, response]);
             }
@@ -118,32 +130,20 @@ class csSocket {
         }
     }
 
-    bufferRead(cnt){
-        var read = Buffer.allocUnsafe(cnt);
-        for(var i = 0; i < cnt; i++){
-            read.writeUInt8(this.buffer[i], i);
-        }
-        this.buffer = this.buffer.slice(i, this.buffer.length);
-        return read;
-    }
-
-    frameDataAndSend(data) { 
-        if(data.length + this.continuationBuffer.length < PL_LARGE){
+    //Sending Data
+    message(to, data){
+        if(data.length < PL_LARGE){
             var header = Buffer.allocUnsafe(2);
             header.writeUInt8(FO_FINISHED, 0);
-            header.writeUInt8(data.length+this.continuationBuffer.length, 1);
+            header.writeUInt8(data.length, 1);
         } else {
             var header = Buffer.allocUnsafe(4);
             header.writeUInt8(FO_FINISHED, 0);
             header.writeUInt8(PL_LARGE, 1);
-            header.writeUInt16BE(data.length+this.continuationBuffer.length, 2);
+            header.writeUInt16BE(data.length, 2);
         }
-        var test = Buffer.concat([header, this.continuationBuffer, data]);
-        if(typeof this.server._events.message == 'function'){
-            this.server.emit('message', this.socket, test);
-        }
-        this.continuationBuffer = Buffer.allocUnsafe(0);
-        return test.length;
+        var headerWithData = Buffer.concat([header, Buffer.from(data)]);
+        to.socket.write(headerWithData);
     }
 }
 
