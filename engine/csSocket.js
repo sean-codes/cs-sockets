@@ -25,8 +25,8 @@ class csSocket {
         this.buffer = EMPTY_BUFFER;
         this.state  = STATE_START;
         this.payloadLength = 0;
-        this.payloadStart = 0;
         this.cont = false;
+        this.count = 0;
         this.continuationBuffer = EMPTY_BUFFER;
         this.finished = true;
     }
@@ -43,7 +43,7 @@ class csSocket {
     receivedData(payLoadLength){
         switch(this.state){
             case STATE_START:
-                this.start(payLoadLength);
+                this.start(this, payLoadLength);
                 break;
             case STATE_GET_LENGTH:
                 this.getLength(payLoadLength);
@@ -57,26 +57,26 @@ class csSocket {
         }
     }
 
-    start(newDataLength){
-        if(this.buffer.length < 2) return;
+    start(socket, newDataLength){
+        if(socket.buffer.length < 2) return;
         newDataLength -= 2;
-        this.maskOpBlah = this.bufferRead(1)[0];
-        if(this.maskOpBlah !== FO_FINISHED){
-            if(this.maskOpBlah == FO_UNFINISHED){
-                this.finished = false;
+        socket.maskOpBlah = socket.bufferRead(1)[0];
+        if(socket.maskOpBlah !== FO_FINISHED){
+            if(socket.maskOpBlah == FO_UNFINISHED){
+                socket.finished = false;
             }
-            if(this.maskOpBlah == FO_CONTINUATION){
-                this.finished = true;
+            if(socket.maskOpBlah == FO_CONTINUATION){
+                socket.finished = true;
             }
-            this.cont = true;
+            socket.cont = true;
         } 
-        this.payloadLength = this.bufferRead(1)[0] & 0x7f; 
-        if(this.payloadLength === PL_LARGE){
-            this.state = STATE_GET_LENGTH;
-            this.getLength(newDataLength);
+        socket.payloadLength = socket.bufferRead(1)[0] & 0x7f; 
+        if(socket.payloadLength === PL_LARGE){
+            socket.state = STATE_GET_LENGTH;
+            socket.getLength(newDataLength);
         } else {
-            this.state = STATE_GET_MASK;
-            this.getMask(newDataLength);
+            socket.state = STATE_GET_MASK;
+            socket.getMask(newDataLength);
         }
     }
 
@@ -84,12 +84,9 @@ class csSocket {
         if(this.buffer.length < 2) return
         newDataLength -= 2;
         this.payloadLength = this.bufferRead(2).readUInt16BE(0);
-        if(this.payloadLength < PL_MAX){
-            this.state = STATE_GET_MASK;
-            this.getMask(newDataLength);
-        } else {
-            this.socket.destroy();
-        }
+
+        this.state = STATE_GET_MASK;
+        this.getMask(newDataLength);
     }
 
     getMask(newDataLength){
@@ -101,7 +98,11 @@ class csSocket {
     }
     
     getData(newDataLength){
-        if(this.buffer.length >= this.payloadLength + this.payloadStart){
+        if(this.buffer.length >= this.payloadLength){
+            if(this.payloadLength !== 1){
+                console.log('Bad Payload');
+                console.log(this.payloadLength);
+            }
             //Create Buffer Header
             var payloadOffset = (this.payloadLength < PL_LARGE) ? 2 : 4;
             var response = Buffer.allocUnsafe(this.payloadLength);
@@ -115,7 +116,28 @@ class csSocket {
 
             //Write back or save for later
             if(this.finished === true){
-                this.server.emit('message', this.info, Buffer.concat([this.continuationBuffer, response]).toString());
+                var stringResponse = Buffer.concat([this.continuationBuffer, response]).toString();
+                
+                //this.server.emit('message', this.info, stringResponse);
+                //testing
+                if(stringResponse.length < PL_LARGE){
+                    var header = Buffer.allocUnsafe(2);
+                    header.writeUInt8(FO_FINISHED, 0);
+                    header.writeUInt8(stringResponse.length, 1);
+                } else {
+                    var header = Buffer.allocUnsafe(4);
+                    header.writeUInt8(FO_FINISHED, 0);
+                    header.writeUInt8(PL_LARGE, 1);
+                    header.writeUInt16BE(stringResponse.length, 2);
+                }
+                var bufferData = Buffer.from(stringResponse);
+                var headerWithData = Buffer.concat([header, bufferData]);
+                this.count += 1;
+                if(this.count % 1000 == 0){
+                    console.log(this.count);
+                    //this.socket.write(headerWithData);
+                }
+                this.socket.write(headerWithData);
                 this.continuationBuffer = EMPTY_BUFFER;
             } else {                
                 this.continuationBuffer = Buffer.concat([this.continuationBuffer, response]);
@@ -125,8 +147,9 @@ class csSocket {
 
             //Response Length
             newDataLength -= response.length;
-            if(newDataLength > 0){
-                this.start(newDataLength);
+            if(newDataLength !== 0){
+                //console.log('running again: ' + newDataLength);
+                setTimeout(this.start, 0, this, newDataLength);
             }
         }
     }
