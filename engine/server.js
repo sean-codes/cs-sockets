@@ -9,6 +9,10 @@ csServer.on('message', function(client, message){
     //this.sendMessage(client, 'multicast', message);
 
     //To Everyone in Room
+    
+    if(message !== 'a'){
+		console.log('message not a');;
+    }
     this.sendMessage(client, 'broadcast', message);
 
     //To Everyone in Game
