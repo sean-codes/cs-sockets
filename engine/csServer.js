@@ -61,7 +61,8 @@ csServer.on('upgrade', function(request, socket, head){
         + `Sec-WebSocket-Accept: ${hashedKey}\r\n\r\n`
     );
     socket.setTimeout(0);
-    socket.allowHalfOpen = false;
+    //socket.allowHalfOpen = false;
+    //socket.setNoDelay(true);
     socket.cs = new csSocket(this, socket, csServer.addClient(socket)); 
 
     //Basic Event Handling
@@ -78,6 +79,10 @@ csServer.on('upgrade', function(request, socket, head){
     socket.on('end', function(){
         console.log('Socket Ended');
     });
+
+    socket.on('error', function(){
+        console.log('Socket Error');
+    })
 });
 
 csServer.sendMessage = function(from, to, data){
@@ -86,7 +91,7 @@ csServer.sendMessage = function(from, to, data){
             var client = this.clientList[i];
             switch(to){
                 case 'multicast':
-                    if(i !== from && client.room == from.room){
+                    if(i !== from.id && client.room == from.room){
                         csServer.frameAndSendData(client, data);
                     }
                     break;
@@ -108,6 +113,7 @@ csServer.sendMessage = function(from, to, data){
 
 csServer.frameAndSendData = function(client, data){
     //Sending Data
+    
     if(data.length < PL_LARGE){
         var header = Buffer.allocUnsafe(2);
         header.writeUInt8(FO_FINISHED, 0);
@@ -118,8 +124,10 @@ csServer.frameAndSendData = function(client, data){
         header.writeUInt8(PL_LARGE, 1);
         header.writeUInt16BE(data.length, 2);
     }
-    var headerWithData = Buffer.concat([header, Buffer.from(data)]);
+    var bufferData = Buffer.from(data);
+    var headerWithData = Buffer.concat([header, bufferData]);
     client.socket.write(headerWithData);
+
 }
 
 module.exports = csServer;
