@@ -14,3 +14,28 @@ Local Machine ~3,000 per second 256 byte string Up/Down
 Remote ~500+ 256 byte string Up/Down (Coffee Shop Wireless Connection)
 
 
+#Usage
+An echo server:
+
+    const csServer = require('./csServer');
+    csServer.on('open', function(client){
+        client.on('message', function(message){
+            this.sendMessage(this, message);
+        });
+    });
+
+Starting CS-Socket:
+
+    const csServer = require('./csServer');
+
+Client Opening Connection:
+
+    csServer.on('open', [function(client)]);
+
+Client Sends Data:
+
+    client.on('message', [function(message)]);
+
+Sending Data to a Client:
+
+    client.send([client to receive], message);
