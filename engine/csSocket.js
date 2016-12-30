@@ -18,11 +18,15 @@ const PL_LARGE = 126;
 const PL_MAX = 50000;
 const EMPTY_BUFFER = Buffer.allocUnsafe(0);
 
-class csSocket {
-    constructor (server, socket, info) {
+//Events
+const Emitter = require('events').EventEmitter;
+
+
+class csSocket extends Emitter{
+    constructor (server, socket) {
+        super();
         this.socket = socket;
         this.server = server;
-        this.info = info;
         this.buffer = EMPTY_BUFFER;
         this.state  = STATE_START;
         this.payloadLength = 0;
@@ -71,8 +75,7 @@ class csSocket {
                     client.finished = true;
                     break;
                 default:
-                    //Fucking fall off
-                    client.server.removeClient(client.socket);
+                    client.socket.end();
                     return;
             }
             if(client.finOpCode == FO_UNFINISHED){
@@ -127,7 +130,7 @@ class csSocket {
             if(this.finished === true){
                 var stringResponse = Buffer.concat([this.continuationBuffer, response]).toString();
                 
-                this.server.emit('message', this.info, stringResponse);
+                this.emit('message', stringResponse);
 
                 this.count += 1;
                 if(this.count % 1000 == 0){
@@ -143,10 +146,30 @@ class csSocket {
             //Response Length
             newDataLength -= response.length;
             if(newDataLength !== 0){
-                //console.log('running again: ' + newDataLength);
                 setTimeout(this.start, 0, this, newDataLength);
             }
         }
+    }
+
+    sendMessage(to, data){
+        this.frameAndSendData(to, data);
+    }
+
+    frameAndSendData(to, data){
+        //Sending Data
+        if(data.length < PL_LARGE){
+            var header = Buffer.allocUnsafe(2);
+            header.writeUInt8(FO_FINISHED, 0);
+            header.writeUInt8(data.length, 1);
+        } else {
+            var header = Buffer.allocUnsafe(4);
+            header.writeUInt8(FO_FINISHED, 0);
+            header.writeUInt8(PL_LARGE, 1);
+            header.writeUInt16BE(data.length, 2);
+        }
+        var bufferData = Buffer.from(data);
+        var headerWithData = Buffer.concat([header, bufferData]);
+        to.socket.write(headerWithData);
     }
 }
 
