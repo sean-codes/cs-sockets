@@ -17,8 +17,10 @@ Remote ~500+ 256 byte string Up/Down (Coffee Shop Wireless Connection)
 #Usage
 An echo server:
 
-    const csServer = require('./csServer');
-    csServer.on('open', function(client){
+    const csServer = require('csServer');
+    const server = new csServer('127.0.0.1', '9999', 'index.html');
+
+    server.on('open', function(client){
         client.on('message', function(message){
             this.sendMessage(this, message);
         });
@@ -26,7 +28,7 @@ An echo server:
 
 Starting CS-Socket:
 
-    const csServer = require('./csServer');
+    const csServer = require('csServer');
 
 Client Opening Connection:
 
