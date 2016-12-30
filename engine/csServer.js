@@ -62,11 +62,12 @@ csServer.on('upgrade', function(request, socket, head){
     );
     socket.setTimeout(0);
     //socket.allowHalfOpen = false;
-    //socket.setNoDelay(true);
+    socket.setNoDelay(true);
     socket.cs = new csSocket(this, socket, csServer.addClient(socket)); 
-
+    socket.kill = false;
     //Basic Event Handling
     socket.on('data', function(newData){
+        if(socket.id == -1) return;
         this.cs.buffer = Buffer.concat([socket.cs.buffer, newData]);
         this.cs.receivedData(newData.length);
     }); 
@@ -113,7 +114,6 @@ csServer.sendMessage = function(from, to, data){
 
 csServer.frameAndSendData = function(client, data){
     //Sending Data
-    
     if(data.length < PL_LARGE){
         var header = Buffer.allocUnsafe(2);
         header.writeUInt8(FO_FINISHED, 0);
@@ -127,7 +127,6 @@ csServer.frameAndSendData = function(client, data){
     var bufferData = Buffer.from(data);
     var headerWithData = Buffer.concat([header, bufferData]);
     client.socket.write(headerWithData);
-
 }
 
 module.exports = csServer;
