@@ -2,6 +2,7 @@
 const FO_UNFINISHED = 1;
 const FO_CONTINUATION = 128;
 const FO_FINISHED = 129;
+const FO_CLOSE = 136;
 const FO_END = 0;
 const FO_PING = 0;
 
@@ -57,26 +58,38 @@ class csSocket {
         }
     }
 
-    start(socket, newDataLength){
-        if(socket.buffer.length < 2) return;
+    start(client, newDataLength){
+        if(client.buffer.length < 2) return;
         newDataLength -= 2;
-        socket.maskOpBlah = socket.bufferRead(1)[0];
-        if(socket.maskOpBlah !== FO_FINISHED){
-            if(socket.maskOpBlah == FO_UNFINISHED){
-                socket.finished = false;
+        client.finOpCode = client.bufferRead(1)[0];
+        if(client.finOpCode !== FO_FINISHED){
+            switch(client.finOpCode){
+                case FO_UNFINISHED:
+                    client.finished = false;
+                    break;
+                case FO_CONTINUATION:
+                    client.finished = true;
+                    break;
+                default:
+                    //Fucking fall off
+                    client.server.removeClient(client.socket);
+                    return;
             }
-            if(socket.maskOpBlah == FO_CONTINUATION){
-                socket.finished = true;
+            if(client.finOpCode == FO_UNFINISHED){
+                client.finished = false;
             }
-            socket.cont = true;
+            if(client.finOpCode == FO_CONTINUATION){
+                client.finished = true;
+            }
+            client.cont = true;
         } 
-        socket.payloadLength = socket.bufferRead(1)[0] & 0x7f; 
-        if(socket.payloadLength === PL_LARGE){
-            socket.state = STATE_GET_LENGTH;
-            socket.getLength(newDataLength);
+        client.payloadLength = client.bufferRead(1)[0] & 0x7f; 
+        if(client.payloadLength === PL_LARGE){
+            client.state = STATE_GET_LENGTH;
+            client.getLength(newDataLength);
         } else {
-            socket.state = STATE_GET_MASK;
-            socket.getMask(newDataLength);
+            client.state = STATE_GET_MASK;
+            client.getMask(newDataLength);
         }
     }
 
@@ -99,10 +112,6 @@ class csSocket {
     
     getData(newDataLength){
         if(this.buffer.length >= this.payloadLength){
-            if(this.payloadLength !== 1){
-                console.log('Bad Payload');
-                console.log(this.payloadLength);
-            }
             //Create Buffer Header
             var payloadOffset = (this.payloadLength < PL_LARGE) ? 2 : 4;
             var response = Buffer.allocUnsafe(this.payloadLength);
@@ -118,26 +127,12 @@ class csSocket {
             if(this.finished === true){
                 var stringResponse = Buffer.concat([this.continuationBuffer, response]).toString();
                 
-                //this.server.emit('message', this.info, stringResponse);
-                //testing
-                if(stringResponse.length < PL_LARGE){
-                    var header = Buffer.allocUnsafe(2);
-                    header.writeUInt8(FO_FINISHED, 0);
-                    header.writeUInt8(stringResponse.length, 1);
-                } else {
-                    var header = Buffer.allocUnsafe(4);
-                    header.writeUInt8(FO_FINISHED, 0);
-                    header.writeUInt8(PL_LARGE, 1);
-                    header.writeUInt16BE(stringResponse.length, 2);
-                }
-                var bufferData = Buffer.from(stringResponse);
-                var headerWithData = Buffer.concat([header, bufferData]);
+                this.server.emit('message', this.info, stringResponse);
+
                 this.count += 1;
                 if(this.count % 1000 == 0){
                     console.log(this.count);
-                    //this.socket.write(headerWithData);
                 }
-                this.socket.write(headerWithData);
                 this.continuationBuffer = EMPTY_BUFFER;
             } else {                
                 this.continuationBuffer = Buffer.concat([this.continuationBuffer, response]);
