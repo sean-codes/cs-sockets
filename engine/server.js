@@ -1,16 +1,17 @@
 //Require Build In
 const csServer = require('./csServer');
+csServer.on('open', function(client){
+	//Add to list
+	console.log('real open');
+	client.on('message', function(message){
+		this.sendMessage(this, message);
+		//this.sendMessage('globalcast', message);
+		//this.sendMessage('broadcast', message);
+		//this.sendMessage('multicast', message);
+	});
 
-csServer.on('message', function(client, message){
-	//To a Specific clientID
-    //this.sendMessage(client, client, message);
-
-    //To everyone but SocketID
-    //this.sendMessage(client, 'multicast', message);
-
-    //To Everyone in Room
-    this.sendMessage(client, 'broadcast', message);
-
-    //To Everyone in Game
-    //this.sendMessage(client, 'globalcast', message);
+	client.on('close', function(){
+		//Remove from list
+		console.log('emitted close');
+	});
 });
