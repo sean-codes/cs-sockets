@@ -1,10 +1,6 @@
 //Require Build In
 const csServer = require('../../');
-const server = new csServer({
-	hostname: '127.0.0.1',
-	port: '9999',
-	html: 'index.html'
-});
+const server = new csServer({ port: '9999' });
 
 server.on('connect', function(client){
 	//Client Connected
@@ -12,10 +8,12 @@ server.on('connect', function(client){
 
 	client.on('message', function(message){
 		//Client Message
+		console.log('Client Message: ' + message);
 		this.sendMessage(this, message);
 	});
 
 	client.on('disonnect', function(){
 		//Client Disconnected
+		console.log('Client Disconnected');
 	});
 });

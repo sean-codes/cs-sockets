@@ -1,21 +1,20 @@
 <html style="background:#cdcdcd">
+<meta charset="UTF-8">
 <script>
-	var sent = '';
 	var url = 'ws://127.0.0.1:9999';
 	var ws = new WebSocket(url);
 	ws.onopen = function(){
 	    console.log('Connected! ' + url);
 	}
 	ws.addEventListener("message", function(event) {
-		console.log('All Good: ' + event.data.length);
+		console.log('Received: ' + event.data);
 	});
-
+ 
 	sendMessage = (text = 'test', cnt = 1) => {
-		sent = text;
 		for(var i = 0; i < cnt; i++){
 			ws.send(text);
 		}
-	} 
+	}
 </script>
 </html>
 
