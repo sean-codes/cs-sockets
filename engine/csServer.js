@@ -37,8 +37,8 @@ class csServer extends Emitter{
     startSecureServer(){
         var http = require('https');
         var server = http.createServer({
-              key: fs.readFileSync(config.ssl.key)
-            , cert: fs.readFileSync(config.ssl.cert)
+              key: fs.readFileSync(this.config.ssl.key)
+            , cert: fs.readFileSync(this.config.ssl.cert)
         }, this.httpRequest);
         return server;
     }
