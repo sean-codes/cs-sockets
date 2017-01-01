@@ -29,12 +29,14 @@ class csServer extends Emitter{
     }
 
     startServer(){
+        console.log('Starting Server (Non-SSL)');
         var http = require('http');
         var server = http.createServer(this.httpRequest);
         return server; 
     }
 
     startSecureServer(){
+        console.log('Starting Server (SSL)');
         var http = require('https');
         var server = http.createServer({
               key: fs.readFileSync(this.config.ssl.key)
