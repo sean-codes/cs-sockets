@@ -37,7 +37,6 @@ class csSocket extends Emitter{
         this.state  = STATE_START;
         this.payloadLength = 0;
         this.cont = false;
-        this.count = 0;
         this.continuationBuffer = EMPTY_BUFFER;
         this.finished = true;
     }
@@ -54,7 +53,7 @@ class csSocket extends Emitter{
     receivedData(payLoadLength){
         switch(this.state){
             case STATE_START:
-                this.start(this, payLoadLength);
+                this.start(payLoadLength);
                 break;
             case STATE_GET_LENGTH:
                 this.getLength(payLoadLength);
@@ -68,37 +67,37 @@ class csSocket extends Emitter{
         }
     }
 
-    start(client, newDataLength){
-        if(client.buffer.length < 2) return;
+    start(newDataLength){
+        if(this.buffer.length < 2) return;
         newDataLength -= 2;
-        client.finOpCode = client.bufferRead(1)[0];
-        if(client.finOpCode !== FO_FINISHED){
-            switch(client.finOpCode){
+        this.finOpCode = this.bufferRead(1)[0];
+        if(this.finOpCode !== FO_FINISHED){
+            switch(this.finOpCode){
                 case FO_UNFINISHED:
-                    client.finished = false;
+                    this.finished = false;
                     break;
                 case FO_CONTINUATION:
-                    client.finished = true;
+                    this.finished = true;
                     break;
                 default:
-                    client.socket.end();
+                    this.socket.end();
                     return;
             }
-            if(client.finOpCode == FO_UNFINISHED){
-                client.finished = false;
+            if(this.finOpCode == FO_UNFINISHED){
+                this.finished = false;
             }
-            if(client.finOpCode == FO_CONTINUATION){
-                client.finished = true;
+            if(this.finOpCode == FO_CONTINUATION){
+                this.finished = true;
             }
-            client.cont = true;
+            this.cont = true;
         } 
-        client.payloadLength = client.bufferRead(1)[0] & 0x7f; 
-        if(client.payloadLength === PL_LARGE){
-            client.state = STATE_GET_LENGTH;
-            client.getLength(newDataLength);
+        this.payloadLength = this.bufferRead(1)[0] & 0x7f; 
+        if(this.payloadLength === PL_LARGE){
+            this.state = STATE_GET_LENGTH;
+            this.getLength(newDataLength);
         } else {
-            client.state = STATE_GET_MASK;
-            client.getMask(newDataLength);
+            this.state = STATE_GET_MASK;
+            this.getMask(newDataLength);
         }
     }
 
