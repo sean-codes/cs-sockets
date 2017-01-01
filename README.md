@@ -20,7 +20,7 @@ An echo server:
     const csServer = require('csServer');
     const server = new csServer('127.0.0.1', '9999', 'index.html');
 
-    server.on('open', function(client){
+    server.on('connect', function(client){
         client.on('message', function(message){
             this.sendMessage(this, message);
         });
@@ -41,3 +41,7 @@ Client Sends Data:
 Sending Data to a Client:
 
     client.send([client to receive], message);
+
+Client Disconnecting
+
+    client.on('disconnect', [function])
