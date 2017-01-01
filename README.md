@@ -1,5 +1,5 @@
 # CS-Sockets
-NodeJS Websockets For Sending Text/JSON (strings)
+Pure NodeJS server for snappy string networking
 
 Still a work in progress!
 
@@ -30,9 +30,9 @@ Starting CS-Socket:
 
     const csServer = require('csServer');
 
-Client Opening Connection:
+Client Opens Connection:
 
-    csServer.on('open', [function(client)]);
+    csServer.on('connect', [function(client)]);
 
 Client Sends Data:
 
