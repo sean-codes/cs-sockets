@@ -18,7 +18,7 @@ Remote ~500+ 256 byte string Up/Down (Coffee Shop Wireless Connection)
 An echo server:
 
     const csServer = require('csServer');
-    const server = new csServer('127.0.0.1', '9999', 'index.html');
+    const server = new csServer({ port: '9999' });
 
     server.on('connect', function(client){
         client.on('message', function(message){
@@ -26,9 +26,10 @@ An echo server:
         });
     });
 
-Starting CS-Socket:
+Starting CS-Sockets:
 
     const csServer = require('csServer');
+    const server = new csServer({[options]})
 
 Client Opens Connection:
 
@@ -45,3 +46,19 @@ Sending Data to a Client:
 Client Disconnecting
 
     client.on('disconnect', [function])
+
+#SSL Connections
+To use your SSL and Key add a ssl field to your csServer options
+When the server starts you should see the message Starting Server (SSL)
+
+    const server = new csServer({
+        port: 9999,
+        ssl: {
+            key: '/etc/letsencrypt/archive/cube-script.net/privkey1.pem',//Your key path
+            cert: '/etc/letsencrypt/archive/cube-script.net/fullchain1.pem'//Your Cert Path
+        }
+    });
+    
+
+
+
