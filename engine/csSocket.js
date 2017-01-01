@@ -141,6 +141,9 @@ class csSocket extends Emitter{
                 this.count += 1;
                 if(this.count % 1000 == 0){
                     console.log(this.count);
+                    var heapUsed = process.memoryUsage();
+                    //console.log("Program is using " + heapUsed + " bytes of Heap.");
+                    console.log(heapUsed);
                 }
                 this.continuationBuffer = EMPTY_BUFFER;
             } else {                
@@ -152,7 +155,7 @@ class csSocket extends Emitter{
             //Response Length
             newDataLength -= response.length;
             if(newDataLength !== 0){
-                setTimeout(this.start, 0, this, newDataLength);
+                process.nextTick(() => { this.start(newDataLength) });
             }
         }
     }
