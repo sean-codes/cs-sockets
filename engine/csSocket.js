@@ -137,14 +137,6 @@ class csSocket extends Emitter{
                 var stringResponse = Buffer.concat([this.continuationBuffer, response]).toString();
                 
                 this.emit('message', stringResponse);
-
-                this.count += 1;
-                if(this.count % 1000 == 0){
-                    console.log(this.count);
-                    var heapUsed = process.memoryUsage();
-                    //console.log("Program is using " + heapUsed + " bytes of Heap.");
-                    console.log(heapUsed);
-                }
                 this.continuationBuffer = EMPTY_BUFFER;
             } else {                
                 this.continuationBuffer = Buffer.concat([this.continuationBuffer, response]);
