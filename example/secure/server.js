@@ -2,7 +2,6 @@
 const csServer = require('../../');
 const server = new csServer({
 	port: 9999,
-	cchtml: 'index.html',
 	ssl: {
 		key: '/etc/letsencrypt/archive/cube-script.net/privkey1.pem',//Your key path
 		cert: '/etc/letsencrypt/archive/cube-script.net/fullchain1.pem'//Your Cert Path
