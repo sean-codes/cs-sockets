@@ -4,7 +4,6 @@
  * MIT Licensed
  */
 
-
 //Finished/Opcode Values
 const FO_UNFINISHED = 1;
 const FO_CONTINUATION = 128;
