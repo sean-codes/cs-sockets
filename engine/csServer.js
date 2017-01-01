@@ -1,3 +1,9 @@
+/*!
+ * CS-Sockets: Server for text based websocketing
+ * Copyright(c) 2017 Sean Mann <sean_codes@outlook.com>
+ * MIT Licensed
+ */
+
 //Network
 const csSocket = require('./csSocket');
 const Emitter = require('events').EventEmitter;
@@ -58,7 +64,7 @@ class csServer extends Emitter{
             }); 
 
             socket.on('close', function(){
-                this.cs.emit('close'); 
+                this.cs.emit('disconnect'); 
             });
 
             socket.on('end', function(){

@@ -1,3 +1,10 @@
+/*!
+ * CS-Sockets: Server for text based websocketing
+ * Copyright(c) 2017 Sean Mann <sean_codes@outlook.com>
+ * MIT Licensed
+ */
+
+
 //Finished/Opcode Values
 const FO_UNFINISHED = 1;
 const FO_CONTINUATION = 128;

@@ -1,0 +1,19 @@
+{
+  "author": "Sean Codes <sean_codes@outlook.com> (instagram.com/sean_codes)",
+  "name": "cs-sockets",
+  "description": "Server for snappy text based websocketing in Node.js",
+  "version": "0.1",
+  "license": "MIT",
+  "main": "index.js",
+  "keywords": [
+    "websockets",
+    "RFC-6455",
+    "websocket",
+    "json-websocket-server",
+    "real-time"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sean-codes/CS-Sockets.git"
+  }
+}
