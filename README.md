@@ -21,8 +21,9 @@ Remote ~500+ 256 byte string Up/Down (Coffee Shop Wireless Connection)
     const server = new csServer({ port: '9999' });
 
     server.on('connect', function(client){
-        client.on('message', function(message){
-            this.send(this, message);
+        
+    server.on('message', function(client, message){
+            this.send(client, message);
         });
     });
 
@@ -38,15 +39,15 @@ Remote ~500+ 256 byte string Up/Down (Coffee Shop Wireless Connection)
 
 ###Client Sends Data:
 
-    client.on('message', [function(message)]);
+    csServer.on('message', [function(message)]);
 
 ###Sending Data to a Client:
 
-    client.send([client to receive], message);
+    csServer.send([client to receive], message);
 
 ###Client Disconnecting
 
-    client.on('disconnect', [function])
+    csServer.on('disconnect', [function])
 
 ###SSL Connections
 To use your SSL and Key add a ssl field to your csServer options
