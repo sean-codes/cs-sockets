@@ -9,7 +9,7 @@ server.on('connect', function(client){
 	client.on('message', function(message){
 		//Client Message
 		console.log('Client Message: ' + message);
-		this.sendMessage(this, message);
+		this.send(this, message);
 	});
 
 	client.on('disonnect', function(){

@@ -12,11 +12,14 @@ const fs = require('fs');
 
 //Constants
 const WS_MAGIC_STRING = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
+const PL_LARGE = 126;
+const FO_FINISHED = 129;
 
 class csServer extends Emitter{
     constructor(config){
         super();
         this.config = config;
+        this.clientCounter = 0;
 
         if(config.ssl)
             this.server = this.startSecureServer(config.ssl);
@@ -61,6 +64,7 @@ class csServer extends Emitter{
             .digest('base64');
 
         this.csServer.writeUpgradeHeader(socket, hashedKey);
+        this.csServer.clientCounter += 1;
         this.csServer.initSocket(socket);
 
         this.csServer.emit('connect', socket.cs);
@@ -97,6 +101,22 @@ class csServer extends Emitter{
         socket.on('end', function(){
             this.destroy();
         });
+    }
+
+    send(to, data){
+        if(data.length < PL_LARGE){
+            var header = Buffer.allocUnsafe(2);
+            header.writeUInt8(FO_FINISHED, 0);
+            header.writeUInt8(data.length, 1);
+        } else {
+            var header = Buffer.allocUnsafe(4);
+            header.writeUInt8(FO_FINISHED, 0);
+            header.writeUInt8(PL_LARGE, 1);
+            header.writeUInt16BE(data.length, 2);
+        }
+        var bufferData = Buffer.from(data);
+        var headerWithData = Buffer.concat([header, bufferData]);
+        to.socket.write(headerWithData);
     }
 }
 

@@ -10,7 +10,7 @@
 		console.log('Received: ' + event.data);
 	});
  
-	sendMessage = (text = 'test', cnt = 1) => {
+	send = (text = 'test', cnt = 1) => {
 		for(var i = 0; i < cnt; i++){
 			ws.send(text);
 		}

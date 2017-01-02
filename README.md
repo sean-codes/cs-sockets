@@ -22,7 +22,7 @@ Remote ~500+ 256 byte string Up/Down (Coffee Shop Wireless Connection)
 
     server.on('connect', function(client){
         client.on('message', function(message){
-            this.sendMessage(this, message);
+            this.send(this, message);
         });
     });
 

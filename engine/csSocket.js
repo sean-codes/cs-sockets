@@ -33,6 +33,7 @@ class csSocket extends Emitter{
         super();
         this.socket = socket;
         this.server = server;
+        this.id = server.clientCounter;
         this.buffer = EMPTY_BUFFER;
         this.state  = STATE_START;
         this.payloadLength = 0;
@@ -135,7 +136,7 @@ class csSocket extends Emitter{
             if(this.finished === true){
                 var stringResponse = Buffer.concat([this.continuationBuffer, response]).toString();
                 
-                this.emit('message', stringResponse);
+                this.server.emit('message', this, stringResponse);
                 this.continuationBuffer = EMPTY_BUFFER;
             } else {                
                 this.continuationBuffer = Buffer.concat([this.continuationBuffer, response]);
@@ -149,27 +150,6 @@ class csSocket extends Emitter{
                 process.nextTick(() => { this.start(newDataLength) });
             }
         }
-    }
-
-    sendMessage(to, data){
-        this.frameAndSendData(to, data);
-    }
-
-    frameAndSendData(to, data){
-        //Sending Data
-        if(data.length < PL_LARGE){
-            var header = Buffer.allocUnsafe(2);
-            header.writeUInt8(FO_FINISHED, 0);
-            header.writeUInt8(data.length, 1);
-        } else {
-            var header = Buffer.allocUnsafe(4);
-            header.writeUInt8(FO_FINISHED, 0);
-            header.writeUInt8(PL_LARGE, 1);
-            header.writeUInt16BE(data.length, 2);
-        }
-        var bufferData = Buffer.from(data);
-        var headerWithData = Buffer.concat([header, bufferData]);
-        to.socket.write(headerWithData);
     }
 }
 
