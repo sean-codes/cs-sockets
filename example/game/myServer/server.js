@@ -8,11 +8,12 @@ const server = new csServer({
 server.control = new serverControl(server);
 
 server.on('connect', function(socket){
-	console.log('Socket connected: ' + socket.id);
+	console.log('Socket Connect: ' + socket.id);
 	this.control.addSocket(socket);
 });
 
 server.on('disconnect', function(socket){
+	console.log('Socket Disconnect: ' + socket.id);
 	this.control.removeSocket(this.control.connections[socket.id]);
 });
 
