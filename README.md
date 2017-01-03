@@ -2,6 +2,7 @@
 Pure NodeJS server for snappy string networking
 
 Still a work in progress!
+>npm install cs-sockets
 
 # Purpose 
 Text only based networking for simple JSON networking
