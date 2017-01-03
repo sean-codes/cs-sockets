@@ -95,7 +95,8 @@ class csServer extends Emitter{
         }); 
 
         socket.on('close', function(){
-            this.cs.emit('disconnect'); 
+            console.log(this);
+            this.cs.server.emit('disconnect', this.cs); 
         });
 
         socket.on('end', function(){
