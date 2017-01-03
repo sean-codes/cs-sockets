@@ -33,7 +33,7 @@ class csSocket extends Emitter{
         super();
         this.socket = socket;
         this.server = server;
-        this.id = server.clientCounter;
+        this.id = server.clientCounter.toString();
         this.buffer = EMPTY_BUFFER;
         this.state  = STATE_START;
         this.payloadLength = 0;
