@@ -20,10 +20,10 @@ Remote ~500+ 256 byte string Up/Down (Coffee Shop Wireless Connection)
     const csServer = require('csServer');
     const server = new csServer({ port: '9999' });
 
-    server.on('connect', function(client){
+    server.on('connect', function(socket){
         
-    server.on('message', function(client, message){
-            this.send(client, message);
+    server.on('message', function(socket, message){
+            this.send(socket, message);
         });
     });
 
@@ -33,21 +33,21 @@ Remote ~500+ 256 byte string Up/Down (Coffee Shop Wireless Connection)
     const server = new csServer({[options]})
 
 
-###Client Opens Connection:
+###Socket Opens Connection:
 
-    csServer.on('connect', [function(client)]);
+    csServer.on('connect', [function(socket)]);
 
-###Client Sends Data:
+###Socket Sends Data:
 
     csServer.on('message', [function(message)]);
 
-###Sending Data to a Client:
+###Sending Data to a socket:
 
-    csServer.send([client to receive], message);
+    csServer.send([socket to receive], message);
 
-###Client Disconnecting
+###Socket Disconnecting
 
-    csServer.on('disconnect', [function])
+    csServer.on('disconnect', [function(socket)])
 
 ###SSL Connections
 To use your SSL and Key add a ssl field to your csServer options
