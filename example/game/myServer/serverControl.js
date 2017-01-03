@@ -43,7 +43,6 @@ class serverControl {
 					}
 				};
 				if(currentConnections.length > 0){
-					console.log(currentConnections);
 					this.sendUnicast(socket, { type: 'newPlayers', list: currentConnections});
 				}
 				break;
