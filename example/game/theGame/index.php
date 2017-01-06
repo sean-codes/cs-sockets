@@ -17,22 +17,13 @@
 			cs.init('view');
 			cs.global.networkControl = { id: -1, list: {} }
 			cs.network.connect({ port:9999, ssl: false });
-
-			cs.obj.create('obj_light', 0, 0);
-			cs.obj.create('obj_buttons', 100, 100);
-			cs.obj.create('obj_crate', 300, 336);
 			cs.obj.create('obj_player', 40, 40);
-			
 			
 			var tx = 0;
 			while(tx < cs.room.width){
 				cs.obj.create('obj_block', tx, cs.room.height-16);
 				tx += 16;
 			}
-			
-			cs.obj.create('obj_joystick', 100, 100);
-			cs.obj.create('obj_inventory', 100, 100);
-			cs.obj.create('obj_fire', 150, 375);
 		</script>
 	</body>
 </html>
