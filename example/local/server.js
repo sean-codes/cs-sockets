@@ -2,18 +2,19 @@
 const csServer = require('../../');
 const server = new csServer({ port: '9999' });
 
-server.on('connect', function(client){
-	//Client Connected
-	console.log('Client Connected');
+const connections = []
+server.on('connect', function(socket){
+	console.log('Socket Connect: ' + socket.id);
+	connections.push(socket)
+});
 
-	client.on('message', function(message){
-		//Client Message
-		console.log('Client Message: ' + message);
-		this.send(this, message);
-	});
+server.on('disconnect', function(socket){
+	console.log('Socket Disconnect: ' + socket.id);
+	this.control.removeSocket(this.control.connections[socket.id]);
+});
 
-	client.on('disonnect', function(){
-		//Client Disconnected
-		console.log('Client Disconnected');
-	});
+server.on('message', function(socket, message){
+	for(var connection of connections){
+		server.send(connection, message);
+	}
 });
