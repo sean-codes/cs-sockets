@@ -15,8 +15,8 @@ Local Machine ~3,000 per second 256 byte string Up/Down
 Remote ~500+ 256 byte string Up/Down (Coffee Shop Wireless Connection)
 
 
-#Usage
-###An echo server:
+# Usage
+### An echo server:
 
     const csServer = require('csServer');
     const server = new csServer({ port: '9999' });
@@ -28,29 +28,29 @@ Remote ~500+ 256 byte string Up/Down (Coffee Shop Wireless Connection)
         });
     });
 
-###Starting CS-Sockets:
+### Starting CS-Sockets:
 
     const csServer = require('csServer');
     const server = new csServer({[options]})
 
 
-###Socket Opens Connection:
+### Socket Opens Connection:
 
     csServer.on('connect', [function(socket)]);
 
-###Socket Sends Data:
+### Socket Sends Data:
 
     csServer.on('message', [function(message)]);
 
-###Sending Data to a socket:
+### Sending Data to a socket:
 
     csServer.send([socket to receive], message);
 
-###Socket Disconnecting
+### Socket Disconnecting
 
     csServer.on('disconnect', [function(socket)])
 
-###SSL Connections
+### SSL Connections
 To use your SSL and Key add a ssl field to your csServer options
 >When the server starts you should see the message Starting Server (SSL)
 
