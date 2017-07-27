@@ -1,7 +1,6 @@
 # CS-Sockets
 Pure NodeJS server for snappy string networking
 
-Still a work in progress!
 >npm install cs-sockets
 
 # Purpose 
